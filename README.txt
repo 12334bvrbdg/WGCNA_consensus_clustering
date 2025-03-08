@@ -5,74 +5,79 @@ making a consensus network
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 
-packages needed:
+# 所需软件包
 
-WGCNA
-methods
-edgeR - maybe??
-RColorBrewer
-data.table
-pryr
+- WGCNA
+- methods
+- edgeR - 可能需要??
+- RColorBrewer
+- data.table
+- pryr
 
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 
-files included:
+# 包含的文件
 
 *********
-##BEWARE hardcoded ibis server filepaths are present in these files, you should change them 
+## 注意：这些文件中包含硬编码的 ibis 服务器文件路径，您需要更改它们
 *********
 
-make_subsamp_wgcna.py
-subsamp_wgcna.R
-seq_inidicator_mat.R
-seq_adding_mat.R
-merge_mats.R
-consensus_cluster.R
+- make_subsamp_wgcna.py
+- subsamp_wgcna.R
+- seq_inidicator_mat.R
+- seq_adding_mat.R
+- merge_mats.R
+- consensus_cluster.R
 
+# 步骤 1 -- 生成子采样网络的 bash 文件
+# 使用: make_subsamp_wgcna.py
+#       subsamp_wgcna.R
 
-Step 1 -- make subsample network bash files 
-use: make_subsamp_wgcna.py 
-	 subsamp_wgcna.R
+########### 输入:
+########### - 实验目录名称
+########### - 基因名称列表
+########### - 输入计数矩阵名称
+########### - 采样次数
+########### - 布尔值 ("rand" = T, 其他值 = F) 描述是否使用随机参数
+###########   否则使用默认的硬编码参数
 
+########### 输出:
+########### - 在 /cbcb/project-scratch/ZCL/wgcna/ 中创建实验目录
+########### - 创建子目录 sub_genes/, clusters/, ouput/, failed/, success/, 2many/, 和 bash/
+########### - 包含每个基因被选择次数和采样次数的文件
 
-###########inputs are: name of experiment directory
-###########			list of gene names
-###########			input count matrix name
-###########			number of samplings
-###########			boolean ("rand" = T, all else = F) describing if random parameters ###########         should be used,
-###########         otherwise the default hardcoded parameters will be used
+########### 程序功能:
+########### - 从网络中选择基因子集，并使用一些参数创建网络
+########### - 生成 bash 文件以在实验目录的 bash/ 子目录中运行 subsamp_wgcna.R 脚本
 
-###########output: experiment directory is created in /cbcb/project-scratch/ZCL/wgcna/
-###########		subdirectories sub_genes/, clusters/, ouput/, failed/, success/, 2many/, ###########     and bash/ are created
-###########		file containing the number of times a gene was chosen and the number of ###########     subsamplings that were taken
+# 然后运行生成的 bash 文件
 
-###########	programs takes a subsample of gene names for the network and some parameters ########### for network creation and produces bash file to run the R script subsamp_wgcna.########### R in the bash/ subdirectory of the experiment directory
+# 步骤 2 生成指示矩阵（可以在网络运行时进行）
+# 使用: seq_inidicator_mat.R ## 需要更改硬编码内容
 
-then run the bash files
+########### 输入:
+########### - exp_name - 由 make_subsamp_wgcna.py 创建的“实验”名称（需要更改硬编码路径）
+########### - start 和 stop - 用于创建指示矩阵的基因样本列表的起始和结束编号
+###########   这允许并行运行 seq_inidicator_matrix.R 以加速
 
-Step 2 make indicator matrix (can be done while networks are running)
-use: seq_inidicator_mat.R ## need to change hardcoded things
+########### 输出:
+########### - 基因对基因矩阵，记录每对基因被共同采样的次数
 
-###########inputs:
-###########exp_name - name of "experiment" created by make_subsamp_wgcna.py (need to ###########change hardcoded paths)
-###########start and stop -- start and stop numbers of gene sample lists to create a ###########indicator matrix for. This allows for parallel running of seq_inidicator_matrix.###########R for a speed up
+# 步骤 3 生成共聚类矩阵
+# 使用: seq_adding_mat.R ## 需要更改硬编码内容
 
-###########output: 
-###########a gene-by-gene matrix counting the number of times each pair of genes was ###########sampled together for input
+########### 输入和输出与 seq_inidicator_mat.R 相同
+########### - 但输出矩阵是基因对基因矩阵，记录每对基因被共同聚类的次数
 
-Step 3 make co-clustering matrix
-use: seq_adding_mat.R ## need to change hardcoded things
+# 步骤 4 合并并行生成的矩阵为一个指示矩阵和一个共聚类矩阵
+# 使用: merge_mats.R
 
-###########same inputs and outputs as seq_inidicator_mat.R but now the output matrix is ###########the gene-by-gene matrix counting the number of times pairs clustered together 
+# 步骤 5 将共聚类矩阵除以指示矩阵，生成一个共识矩阵，其值范围为 [0,1]
+# 这个矩阵可以用作距离值
 
-Step 4 combine the matrices made in parallel into one indicator matrix and one co-clustering matrix
-use: merge_mats.R
-
-Step 5 divide the co-clustering matrix by the indicator matrix to make a consensus matrix that has values [0,1]. This can be used as a distance value now.
-
-Step 6 use the 1 minus the consensus matrix for new distance unit to do WGCNA clustering
-use consensus_cluster.R
+# 步骤 6 使用 1 减去共识矩阵作为新的距离度量进行 WGCNA 聚类
+# 使用: consensus_cluster.R
 
 
